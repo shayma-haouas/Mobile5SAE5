@@ -47,13 +47,14 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return Scaffold(
       body: _pages[_currentIndex],
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withOpacity(0.06),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
@@ -63,7 +64,7 @@ class _MainScreenState extends State<MainScreen> {
           type: BottomNavigationBarType.fixed,
           currentIndex: _currentIndex,
           onTap: (index) => setState(() => _currentIndex = index),
-          selectedItemColor: const Color(0xFF4CAF50),
+          selectedItemColor: primary,
           unselectedItemColor: Colors.grey,
           backgroundColor: Colors.white,
           elevation: 0,
@@ -100,7 +101,3 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 }
-
-
-
-
