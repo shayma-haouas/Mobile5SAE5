@@ -61,8 +61,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> with WidgetsBindingObse
       }
     }
 
-    // Optionally start running automatically; comment out if you prefer manual start
-    // _startStopwatch();
+    _startStopwatch();
     setState(() {});
   }
 
@@ -124,15 +123,93 @@ class _GoalDetailPageState extends State<GoalDetailPage> with WidgetsBindingObse
   }
 
   void _addDay() {
+    final now = DateTime.now();
+    DateTime nextDay = now;
+    
+    // Find the next unchecked day starting from today
+    while (_goal.checkedInDates.contains(_dateKey(nextDay))) {
+      nextDay = nextDay.add(const Duration(days: 1));
+    }
+    
     setState(() {
       if (_goal.completedDays == 0) {
-        _goal.streakStarted ??= DateTime.now();
+        _goal.streakStarted ??= now;
       }
-      _goal.completedDays += 1;
+      _goal.checkedInDates.add(_dateKey(nextDay));
+      _goal.completedDays = _goal.checkedInDates.length;
       _goal.sessionSeconds += 24 * 3600;
-      // keep running behavior smooth
-      if (_running) _startTime = DateTime.now();
+      _startTime = now;
+      if (!_running) _running = true;
     });
+    _saveState();
+  }
+
+  String _dateKey(DateTime date) => '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+
+  bool _isCheckedInToday() => _goal.checkedInDates.contains(_dateKey(DateTime.now()));
+
+  void _toggleTodayCheckIn() {
+    final today = _dateKey(DateTime.now());
+    setState(() {
+      if (_goal.checkedInDates.contains(today)) {
+        _goal.checkedInDates.remove(today);
+      } else {
+        if (_goal.completedDays == 0) _goal.streakStarted ??= DateTime.now();
+        _goal.checkedInDates.add(today);
+      }
+      _goal.completedDays = _goal.checkedInDates.length;
+    });
+    _saveState();
+  }
+
+  Widget _buildCalendar() {
+    final now = DateTime.now();
+    final startOfMonth = DateTime(now.year, now.month, 1);
+    final daysInMonth = DateTime(now.year, now.month + 1, 0).day;
+    final firstWeekday = startOfMonth.weekday % 7;
+
+    return Column(
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+              .map((d) => SizedBox(width: 32, child: Center(child: Text(d, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey.shade600)))))
+              .toList(),
+        ),
+        const SizedBox(height: 8),
+        Wrap(
+          children: List.generate(firstWeekday + daysInMonth, (i) {
+            if (i < firstWeekday) return const SizedBox(width: 32, height: 32);
+            final day = i - firstWeekday + 1;
+            final date = DateTime(now.year, now.month, day);
+            final dateKey = _dateKey(date);
+            final isChecked = _goal.checkedInDates.contains(dateKey);
+            final isToday = day == now.day;
+
+            return Container(
+              width: 32,
+              height: 32,
+              margin: const EdgeInsets.all(2),
+              decoration: BoxDecoration(
+                color: isChecked ? Colors.green : (isToday ? Colors.blue.shade50 : null),
+                shape: BoxShape.circle,
+                border: isToday ? Border.all(color: Colors.blue, width: 2) : null,
+              ),
+              child: Center(
+                child: Text(
+                  '$day',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isChecked ? Colors.white : Colors.black87,
+                    fontWeight: isToday ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
   }
 
   Future<void> _resetProgress() async {
@@ -150,6 +227,7 @@ class _GoalDetailPageState extends State<GoalDetailPage> with WidgetsBindingObse
     if (ok == true) {
       setState(() {
         _goal.completedDays = 0;
+        _goal.checkedInDates.clear();
         _goal.streakStarted = null;
         _resetStopwatch();
       });
@@ -346,6 +424,43 @@ class _GoalDetailPageState extends State<GoalDetailPage> with WidgetsBindingObse
                     const SizedBox(height: 8),
                     Text('This timer runs continuously for this goal.',
                         style: TextStyle(color: Colors.grey.shade600, fontSize: 12)),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 12),
+
+            // Daily Check-in Calendar
+            Card(
+              elevation: 1,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              child: Padding(
+                padding: const EdgeInsets.all(14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(Icons.calendar_today, size: 20),
+                        SizedBox(width: 8),
+                        Text('Daily Check-ins', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    _buildCalendar(),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: _toggleTodayCheckIn,
+                        icon: Icon(_isCheckedInToday() ? Icons.check_circle : Icons.circle_outlined),
+                        label: Text(_isCheckedInToday() ? 'Checked In Today ✓' : 'Check In Today'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _isCheckedInToday() ? Colors.green : primary,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

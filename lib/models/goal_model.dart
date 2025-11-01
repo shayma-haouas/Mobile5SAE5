@@ -14,6 +14,9 @@ class Goal {
   /// persisted total seconds spent on this goal (accumulated)
   int sessionSeconds;
 
+  /// Set of dates (YYYY-MM-DD) when user checked in
+  Set<String> checkedInDates;
+
   Goal({
     required this.id,
     required this.emoji,
@@ -25,7 +28,9 @@ class Goal {
     DateTime? createdAt,
     this.streakStarted,
     this.sessionSeconds = 0,
-  }) : createdAt = createdAt ?? DateTime.now();
+    Set<String>? checkedInDates,
+  }) : createdAt = createdAt ?? DateTime.now(),
+       checkedInDates = checkedInDates ?? {};
 
   double progressPercent() {
     if (targetDays <= 0) return 0;
@@ -51,6 +56,7 @@ class Goal {
       'createdAt': createdAt.toIso8601String(),
       'streakStarted': streakStarted?.toIso8601String(),
       'sessionSeconds': sessionSeconds,
+      'checkedInDates': checkedInDates.toList(),
     };
   }
 
@@ -68,6 +74,9 @@ class Goal {
           ? DateTime.parse(map['streakStarted'] as String)
           : null,
       sessionSeconds: (map['sessionSeconds'] ?? 0) as int,
+      checkedInDates: map['checkedInDates'] != null
+          ? Set<String>.from(map['checkedInDates'])
+          : {},
     );
   }
 
