@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/game_service.dart';
 
 class BreathingGame extends StatefulWidget {
   const BreathingGame({super.key});
@@ -15,6 +16,7 @@ class _BreathingGameState extends State<BreathingGame> with TickerProviderStateM
   bool _isBreathing = false;
   String _instruction = 'Tap to start breathing exercise';
   String _phase = 'ready';
+  int _breathCount = 0;
 
   @override
   void initState() {
@@ -43,11 +45,13 @@ class _BreathingGameState extends State<BreathingGame> with TickerProviderStateM
     setState(() {
       _isBreathing = true;
       _phase = 'inhale';
+      _breathCount = 0;
     });
     _breatheCycle();
   }
 
   void _stopBreathing() {
+    if (_breathCount > 0) GameService().saveGameScore('Breathe', _breathCount);
     setState(() {
       _isBreathing = false;
       _instruction = 'Tap to start breathing exercise';
@@ -97,7 +101,10 @@ class _BreathingGameState extends State<BreathingGame> with TickerProviderStateM
     // Brief pause
     await Future.delayed(const Duration(milliseconds: 500));
     
-    if (_isBreathing && mounted) _breatheCycle();
+    if (_isBreathing && mounted) {
+      setState(() => _breathCount++);
+      _breatheCycle();
+    }
   }
 
   Color _getPhaseColor() {
@@ -267,6 +274,9 @@ class _BreathingGameState extends State<BreathingGame> with TickerProviderStateM
 
   @override
   void dispose() {
+    if (_breathCount > 0 && mounted) {
+      GameService().saveGameScore('Breathe', _breathCount);
+    }
     _breathController.dispose();
     _rippleController.dispose();
     super.dispose();

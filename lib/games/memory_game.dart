@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../services/game_service.dart';
 
 class MemoryGame extends StatefulWidget {
   const MemoryGame({super.key});
@@ -70,6 +71,7 @@ class _MemoryGameState extends State<MemoryGame> with TickerProviderStateMixin {
     
     if (_userSequence[_userSequence.length - 1] != _sequence[_userSequence.length - 1]) {
       setState(() => _gameOver = true);
+      GameService().saveGameScore('Memory', _sequence.length);
       return;
     }
     
@@ -237,12 +239,13 @@ class _MemoryGameState extends State<MemoryGame> with TickerProviderStateMixin {
                                 ),
                               const SizedBox(height: 30),
                               SizedBox(
-                                height: 200,
+                                height: 180,
                                 child: GridView.count(
                                   shrinkWrap: true,
                                   crossAxisCount: 2,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
+                                  crossAxisSpacing: 12,
+                                  mainAxisSpacing: 12,
+                                  childAspectRatio: 1.1,
                                   children: List.generate(4, (index) {
                                   bool isActive = _currentStep == index;
                                   return AnimatedBuilder(
@@ -294,6 +297,9 @@ class _MemoryGameState extends State<MemoryGame> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    if (_sequence.isNotEmpty && mounted) {
+      GameService().saveGameScore('Memory', _sequence.length);
+    }
     _flashController.dispose();
     super.dispose();
   }

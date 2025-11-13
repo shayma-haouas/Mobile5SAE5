@@ -7,6 +7,8 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 import '../models/goal_model.dart';
 import '../services/goals_repository.dart';
+import '../services/game_service.dart';
+import '../models/game_history_model.dart';
 
 
 class StatsPage extends StatefulWidget {
@@ -19,9 +21,11 @@ class StatsPage extends StatefulWidget {
 class _StatsPageState extends State<StatsPage> {
   List<Goal> _goals = [];
   final GoalsRepository _repo = GoalsRepository();
+  final GameService _gameService = GameService();
   Timer? _timer;
   List<Map<String, dynamic>> _whatIfScenarios = [];
   bool _apiConnected = false;
+  List<Milestone> _achievedMilestones = [];
 
   @override
   void initState() {
@@ -29,6 +33,7 @@ class _StatsPageState extends State<StatsPage> {
     _loadGoals();
     _loadWhatIfScenarios();
     _loadRecoveryStats();
+    _loadAchievedMilestones();
     _startTimer();
   }
 
@@ -260,11 +265,23 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   void _startTimer() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 10), (timer) {
       if (_goals.isNotEmpty) {
-        setState(() {}); // Refresh UI every second
+        _updateMilestones();
+        setState(() {});
       }
     });
+  }
+
+  Future<void> _loadAchievedMilestones() async {
+    final milestones = await _gameService.getMilestones();
+    setState(() => _achievedMilestones = milestones.where((m) => m.isAchieved).toList());
+  }
+
+  Future<void> _updateMilestones() async {
+    final minutes = (totalDaysFromGoals * 24 * 60);
+    await _gameService.updateMilestonesFromStats(minutes, moneySaved);
+    await _loadAchievedMilestones();
   }
 
 
@@ -436,6 +453,8 @@ class _StatsPageState extends State<StatsPage> {
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
+                if (_achievedMilestones.isNotEmpty) _buildBadgesSection(),
                 const SizedBox(height: 20),
                 // Current vs Projected Charts
                 if (totalDaysFromGoals > 0) _buildMoneyProjectionChart(),
@@ -1265,6 +1284,57 @@ class _StatsPageState extends State<StatsPage> {
               'Data: ${_apiConnected ? "Live API" : "Local Cache"}',
               style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBadgesSection() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '🏅 Achievements',
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF4CAF50),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _achievedMilestones.map((m) => Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: const Color(0xFF4CAF50)),
+              ),
+              child: Text(
+                m.title,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF4CAF50),
+                ),
+              ),
+            )).toList(),
           ),
         ],
       ),

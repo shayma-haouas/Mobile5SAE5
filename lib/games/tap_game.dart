@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/game_service.dart';
 
 class TapGame extends StatefulWidget {
   const TapGame({super.key});
@@ -9,7 +10,7 @@ class TapGame extends StatefulWidget {
 
 class _TapGameState extends State<TapGame> with TickerProviderStateMixin {
   int _score = 0;
-  int _timeLeft = 30;
+  int _timeLeft = 10;
   bool _gameActive = false;
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
@@ -29,7 +30,7 @@ class _TapGameState extends State<TapGame> with TickerProviderStateMixin {
   void _startGame() {
     setState(() {
       _score = 0;
-      _timeLeft = 30;
+      _timeLeft = 10;
       _gameActive = true;
     });
     
@@ -39,7 +40,10 @@ class _TapGameState extends State<TapGame> with TickerProviderStateMixin {
         setState(() => _timeLeft--);
         return true;
       }
-      if (mounted) setState(() => _gameActive = false);
+      if (mounted) {
+        setState(() => _gameActive = false);
+        await GameService().saveGameScore('Speed Tap', _score);
+      }
       return false;
     });
   }
@@ -100,7 +104,7 @@ class _TapGameState extends State<TapGame> with TickerProviderStateMixin {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        if (!_gameActive && _timeLeft == 30)
+                        if (!_gameActive && _timeLeft == 10)
                           Column(
                             children: [
                               const Text(
@@ -257,6 +261,9 @@ class _TapGameState extends State<TapGame> with TickerProviderStateMixin {
 
   @override
   void dispose() {
+    if (_score > 0 && mounted) {
+      GameService().saveGameScore('Speed Tap', _score);
+    }
     _pulseController.dispose();
     super.dispose();
   }

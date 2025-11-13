@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
+import '../services/game_service.dart';
 
 class ColorMatchGame extends StatefulWidget {
   const ColorMatchGame({super.key});
@@ -58,6 +59,7 @@ class _ColorMatchGameState extends State<ColorMatchGame> with TickerProviderStat
       _successController.forward().then((_) => _successController.reverse());
     } else {
       setState(() => _gameStarted = false);
+      GameService().saveGameScore('Color Match', _score);
     }
   }
 
@@ -297,6 +299,9 @@ class _ColorMatchGameState extends State<ColorMatchGame> with TickerProviderStat
 
   @override
   void dispose() {
+    if (_score > 0 && mounted) {
+      GameService().saveGameScore('Color Match', _score);
+    }
     _successController.dispose();
     super.dispose();
   }

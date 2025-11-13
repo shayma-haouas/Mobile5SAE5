@@ -3,6 +3,9 @@ import '../games/tap_game.dart';
 import '../games/memory_game.dart';
 import '../games/breathing_game.dart';
 import '../games/color_match_game.dart';
+import '../games/quote_game.dart';
+import '../games/trivia_game.dart';
+import 'game_history_page.dart';
 
 class MiniGamesPage extends StatelessWidget {
   const MiniGamesPage({super.key});
@@ -24,13 +27,23 @@ class MiniGamesPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '🎮 Mini Games',
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        '🎮 Mini Games',
+                        style: TextStyle(
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const GameHistoryPage())),
+                      icon: const Icon(Icons.history, color: Colors.white, size: 28),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -75,6 +88,20 @@ class MiniGamesPage extends StatelessWidget {
                         description: 'Match the colors!',
                         color: const Color(0xFF8BC34A),
                         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ColorMatchGame())),
+                      ),
+                      GameCard(
+                        title: 'Quote Master',
+                        emoji: '💬',
+                        description: 'Read inspiring quotes',
+                        color: const Color(0xFF6A1B9A),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const QuoteGame())),
+                      ),
+                      GameCard(
+                        title: 'Trivia Master',
+                        emoji: '🧩',
+                        description: 'Answer trivia questions',
+                        color: const Color(0xFFD32F2F),
+                        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TriviaGame())),
                       ),
                     ],
                   ),
