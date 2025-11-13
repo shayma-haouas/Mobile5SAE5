@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../models/goal_model.dart';
 import '../services/goals_repository.dart';
@@ -16,14 +15,11 @@ class StatsPage extends StatefulWidget {
 class _StatsPageState extends State<StatsPage> {
   List<Goal> _goals = [];
   final GoalsRepository _repo = GoalsRepository();
-  double cigarettesPerDay = 20;
-  double pricePerCigarette = 0.5;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
     _loadGoals();
     _startTimer();
   }
@@ -49,12 +45,7 @@ class _StatsPageState extends State<StatsPage> {
     });
   }
 
-  Future<void> _loadData() async {
-    final prefs = await SharedPreferences.getInstance();
-    cigarettesPerDay = prefs.getDouble('cigarettes_per_day') ?? 20;
-    pricePerCigarette = prefs.getDouble('price_per_cigarette') ?? 0.5;
-    setState(() {});
-  }
+
 
   int get totalDaysFromGoals {
     if (_goals.isEmpty) return 0;
@@ -67,11 +58,13 @@ class _StatsPageState extends State<StatsPage> {
   }
 
   int get cigarettesAvoided {
-    return (totalDaysFromGoals * cigarettesPerDay).floor();
+    if (_goals.isEmpty) return 0;
+    return _goals.map((g) => (g.completedDays * g.cigarettesPerDay).floor()).fold(0, (sum, cigs) => sum + cigs);
   }
 
   double get moneySaved {
-    return cigarettesAvoided * pricePerCigarette;
+    if (_goals.isEmpty) return 0;
+    return _goals.map((g) => g.completedDays * g.cigarettesPerDay * g.pricePerCigarette).fold(0.0, (sum, money) => sum + money);
   }
 
   String get lifeRegained {
@@ -85,13 +78,16 @@ class _StatsPageState extends State<StatsPage> {
 
   List<FlSpot> get currentMoneySavedData {
     final totalDays = totalDaysFromGoals;
-    if (totalDays == 0) return [const FlSpot(0, 0)];
+    if (totalDays == 0 || _goals.isEmpty) return [const FlSpot(0, 0)];
+    
+    final avgCigarettes = _goals.map((g) => g.cigarettesPerDay).reduce((a, b) => a + b) / _goals.length;
+    final avgPrice = _goals.map((g) => g.pricePerCigarette).reduce((a, b) => a + b) / _goals.length;
     
     final maxDays = totalDays > 90 ? 90 : (totalDays < 1 ? 30 : totalDays);
     List<FlSpot> spots = [const FlSpot(0, 0)];
     
     for (int day = 1; day <= maxDays; day++) {
-      final moneySaved = day * cigarettesPerDay * pricePerCigarette;
+      final moneySaved = day * avgCigarettes * avgPrice;
       spots.add(FlSpot(day.toDouble(), moneySaved));
     }
     
@@ -100,12 +96,16 @@ class _StatsPageState extends State<StatsPage> {
   
   List<FlSpot> get projectedMoneySavedData {
     final currentDays = totalDaysFromGoals;
+    if (_goals.isEmpty) return [];
+    
+    final avgCigarettes = _goals.map((g) => g.cigarettesPerDay).reduce((a, b) => a + b) / _goals.length;
+    final avgPrice = _goals.map((g) => g.pricePerCigarette).reduce((a, b) => a + b) / _goals.length;
     final projectionDays = currentDays > 90 ? 180 : 90;
     
     List<FlSpot> spots = [];
     
     for (int day = currentDays; day <= projectionDays; day++) {
-      final moneySaved = day * cigarettesPerDay * pricePerCigarette;
+      final moneySaved = day * avgCigarettes * avgPrice;
       spots.add(FlSpot(day.toDouble(), moneySaved));
     }
     
@@ -114,13 +114,15 @@ class _StatsPageState extends State<StatsPage> {
   
   List<FlSpot> get currentCigarettesAvoidedData {
     final totalDays = totalDaysFromGoals;
-    if (totalDays == 0) return [const FlSpot(0, 0)];
+    if (totalDays == 0 || _goals.isEmpty) return [const FlSpot(0, 0)];
+    
+    final avgCigarettes = _goals.map((g) => g.cigarettesPerDay).reduce((a, b) => a + b) / _goals.length;
     
     final maxDays = totalDays > 90 ? 90 : (totalDays < 1 ? 30 : totalDays);
     List<FlSpot> spots = [const FlSpot(0, 0)];
     
     for (int day = 1; day <= maxDays; day++) {
-      final cigarettesAvoided = day * cigarettesPerDay;
+      final cigarettesAvoided = day * avgCigarettes;
       spots.add(FlSpot(day.toDouble(), cigarettesAvoided));
     }
     
@@ -129,12 +131,15 @@ class _StatsPageState extends State<StatsPage> {
   
   List<FlSpot> get projectedCigarettesAvoidedData {
     final currentDays = totalDaysFromGoals;
+    if (_goals.isEmpty) return [];
+    
+    final avgCigarettes = _goals.map((g) => g.cigarettesPerDay).reduce((a, b) => a + b) / _goals.length;
     final projectionDays = currentDays > 90 ? 180 : 90;
     
     List<FlSpot> spots = [];
     
     for (int day = currentDays; day <= projectionDays; day++) {
-      final cigarettesAvoided = day * cigarettesPerDay;
+      final cigarettesAvoided = day * avgCigarettes;
       spots.add(FlSpot(day.toDouble(), cigarettesAvoided));
     }
     
@@ -273,7 +278,10 @@ class _StatsPageState extends State<StatsPage> {
 
   Widget _buildMoneyProjectionChart() {
     final currentDays = totalDaysFromGoals;
-    final projectedMax = (currentDays > 90 ? 180 : 90) * cigarettesPerDay * pricePerCigarette;
+    if (_goals.isEmpty) return const SizedBox();
+    final avgCigarettes = _goals.map((g) => g.cigarettesPerDay).reduce((a, b) => a + b) / _goals.length;
+    final avgPrice = _goals.map((g) => g.pricePerCigarette).reduce((a, b) => a + b) / _goals.length;
+    final projectedMax = (currentDays > 90 ? 180 : 90) * avgCigarettes * avgPrice;
     
     return Container(
       padding: const EdgeInsets.all(20),
@@ -393,7 +401,9 @@ class _StatsPageState extends State<StatsPage> {
   
   Widget _buildCigarettesProjectionChart() {
     final currentDays = totalDaysFromGoals;
-    final projectedMax = (currentDays > 90 ? 180 : 90) * cigarettesPerDay;
+    if (_goals.isEmpty) return const SizedBox();
+    final avgCigarettes = _goals.map((g) => g.cigarettesPerDay).reduce((a, b) => a + b) / _goals.length;
+    final projectedMax = (currentDays > 90 ? 180 : 90) * avgCigarettes;
     
     return Container(
       padding: const EdgeInsets.all(20),

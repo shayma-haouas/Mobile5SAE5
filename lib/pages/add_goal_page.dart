@@ -16,6 +16,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
   final _descController = TextEditingController();
   final _noteController = TextEditingController();
   int _targetDays = 30;
+  double _cigarettesPerDay = 20.0;
+  double _pricePerCigarette = 0.5;
 
   @override
   void dispose() {
@@ -35,6 +37,8 @@ class _AddGoalPageState extends State<AddGoalPage> {
         description: _descController.text.trim(),
         targetDays: _targetDays,
         note: _noteController.text.trim(),
+        cigarettesPerDay: _cigarettesPerDay,
+        pricePerCigarette: _pricePerCigarette,
       );
       Navigator.of(context).pop(goal);
     }
@@ -107,6 +111,46 @@ class _AddGoalPageState extends State<AddGoalPage> {
                       controller: _noteController,
                       decoration: const InputDecoration(labelText: 'Note (optional)'),
                       maxLines: 2,
+                    ),
+                    const SizedBox(height: 16),
+                    const Divider(),
+                    const Text('Smoking Stats Configuration', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Text('Cigarettes/day:', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Slider(
+                            value: _cigarettesPerDay,
+                            min: 1,
+                            max: 60,
+                            divisions: 59,
+                            label: _cigarettesPerDay.toStringAsFixed(0),
+                            activeColor: primary,
+                            onChanged: (v) => setState(() => _cigarettesPerDay = v),
+                          ),
+                        ),
+                        Text(_cigarettesPerDay.toStringAsFixed(0)),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        const Text('Price/cigarette:', style: TextStyle(fontWeight: FontWeight.w600)),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Slider(
+                            value: _pricePerCigarette,
+                            min: 0.1,
+                            max: 2.0,
+                            divisions: 19,
+                            label: '\$${_pricePerCigarette.toStringAsFixed(2)}',
+                            activeColor: primary,
+                            onChanged: (v) => setState(() => _pricePerCigarette = v),
+                          ),
+                        ),
+                        Text('\$${_pricePerCigarette.toStringAsFixed(2)}'),
+                      ],
                     ),
                     const SizedBox(height: 16),
                     Row(

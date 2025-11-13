@@ -1,6 +1,5 @@
 // lib/pages/goal_detail_page.dart
 import 'dart:async';
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' as services; // <<-- prefixed import
 import 'package:shared_preferences/shared_preferences.dart';
@@ -134,8 +133,14 @@ class _GoalDetailPageState extends State<GoalDetailPage> with WidgetsBindingObse
       }
       _goal.checkedInDates.add(_dateKey(nextDay));
       _goal.completedDays = _goal.checkedInDates.length;
-      _goal.sessionSeconds += 24 * 3600;
-      _startTime = now;
+      
+      // Preserve current minutes and seconds, only add 24 hours
+      final currentElapsed = _computeTotalElapsedSeconds();
+      final currentMinutesSeconds = currentElapsed % 3600; // Keep minutes and seconds
+      final newDays = _goal.completedDays;
+      _goal.sessionSeconds = (newDays * 24 * 3600) + currentMinutesSeconds;
+      
+      _startTime = now; // Reset start time to avoid double counting
       if (!_running) _running = true;
     });
     _saveState();

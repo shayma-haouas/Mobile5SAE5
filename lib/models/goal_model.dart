@@ -13,6 +13,9 @@ class Goal {
 
   /// persisted total seconds spent on this goal (accumulated)
   int sessionSeconds;
+  
+  double cigarettesPerDay;
+  double pricePerCigarette;
 
   /// Set of dates (YYYY-MM-DD) when user checked in
   Set<String> checkedInDates;
@@ -29,6 +32,8 @@ class Goal {
     this.streakStarted,
     this.sessionSeconds = 0,
     Set<String>? checkedInDates,
+    this.cigarettesPerDay = 20.0,
+    this.pricePerCigarette = 0.5,
   }) : createdAt = createdAt ?? DateTime.now(),
        checkedInDates = checkedInDates ?? {};
 
@@ -54,6 +59,8 @@ class Goal {
       'completedDays': completedDays,
       'createdAt': createdAt.toIso8601String(),
       'isCompleted': isCompleted ? 1 : 0,
+      'cigarettesPerDay': cigarettesPerDay,
+      'pricePerCigarette': pricePerCigarette,
     };
   }
 
@@ -66,6 +73,8 @@ class Goal {
       targetDays: (map['targetDays'] ?? 0) as int,
       completedDays: (map['completedDays'] ?? 0) as int,
       createdAt: DateTime.parse(map['createdAt'] as String),
+      cigarettesPerDay: (map['cigarettesPerDay'] ?? 20.0) as double,
+      pricePerCigarette: (map['pricePerCigarette'] ?? 0.5) as double,
     );
   }
 
