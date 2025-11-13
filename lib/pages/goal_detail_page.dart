@@ -38,16 +38,13 @@ class _GoalDetailPageState extends State<GoalDetailPage> with WidgetsBindingObse
     _loadStateAndCorrectTime();
   }
 
-  /// Load persisted seconds and lastSaved, then add time passed while app was closed.
   Future<void> _loadStateAndCorrectTime() async {
     final prefs = await SharedPreferences.getInstance();
     final goalId = _goal.id;
 
-    // Load previously saved session total
     final savedSeconds = prefs.getInt('goal_${goalId}_sessionSeconds') ?? 0;
     _goal.sessionSeconds = savedSeconds;
 
-    // If we saved a timestamp, compute how much time passed since then
     final lastSavedString = prefs.getString('goal_${goalId}_lastSaved');
     if (lastSavedString != null) {
       try {

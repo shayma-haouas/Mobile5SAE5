@@ -52,11 +52,8 @@ class Goal {
       'description': description,
       'targetDays': targetDays,
       'completedDays': completedDays,
-      'note': note,
       'createdAt': createdAt.toIso8601String(),
-      'streakStarted': streakStarted?.toIso8601String(),
-      'sessionSeconds': sessionSeconds,
-      'checkedInDates': checkedInDates.toList(),
+      'isCompleted': isCompleted ? 1 : 0,
     };
   }
 
@@ -68,15 +65,7 @@ class Goal {
       description: map['description'] as String? ?? '',
       targetDays: (map['targetDays'] ?? 0) as int,
       completedDays: (map['completedDays'] ?? 0) as int,
-      note: map['note'] as String? ?? '',
       createdAt: DateTime.parse(map['createdAt'] as String),
-      streakStarted: map['streakStarted'] != null
-          ? DateTime.parse(map['streakStarted'] as String)
-          : null,
-      sessionSeconds: (map['sessionSeconds'] ?? 0) as int,
-      checkedInDates: map['checkedInDates'] != null
-          ? Set<String>.from(map['checkedInDates'])
-          : {},
     );
   }
 

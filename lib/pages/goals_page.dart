@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/goal_model.dart';
 import '../services/goals_repository.dart';
+import '../services/api_service.dart';
 import 'add_goal_page.dart';
 import 'goal_detail_page.dart';
 
@@ -15,11 +16,27 @@ class _GoalsPageState extends State<GoalsPage> {
   final GoalsRepository _repo = GoalsRepository();
   List<Goal> _goals = [];
   bool _loading = true;
+  String _motivationalQuote = 'Loading inspiration...';
+  String _healthTip = 'Loading health tip...';
+  String _weatherMotivation = 'Loading weather info...';
 
   @override
   void initState() {
     super.initState();
     _load();
+    _loadApiData();
+  }
+
+  Future<void> _loadApiData() async {
+    final quote = await ApiService.getMotivationalQuote();
+    final healthData = await ApiService.getHealthTip();
+    final weather = await ApiService.getWeatherMotivation('Paris');
+    
+    setState(() {
+      _motivationalQuote = quote;
+      _healthTip = healthData['tip'] ?? 'Stay healthy!';
+      _weatherMotivation = weather;
+    });
   }
 
   Future<void> _load() async {
@@ -145,6 +162,8 @@ class _GoalsPageState extends State<GoalsPage> {
     );
   }
 
+
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,35 +178,88 @@ class _GoalsPageState extends State<GoalsPage> {
               Expanded(
                 child: _loading
                     ? const Center(child: CircularProgressIndicator())
-                    : _goals.isEmpty
-                        ? Center(
+                    : Column(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            margin: const EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade200),
+                            ),
                             child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Text('No goals yet', style: TextStyle(color: Colors.black87)),
-                                const SizedBox(height: 12),
-                                ElevatedButton.icon(
-                                  onPressed: () async {
-                                    final newGoal = await Navigator.push<Goal?>(
-                                      context,
-                                      MaterialPageRoute(builder: (_) => const AddGoalPage()),
-                                    );
-                                    if (newGoal != null) _addGoal(newGoal);
-                                  },
-                                  icon: const Icon(Icons.add),
-                                  label: const Text('Create a goal'),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.lightbulb, color: Colors.orange),
+                                    const SizedBox(width: 8),
+                                    const Text('Daily Motivation', style: TextStyle(fontWeight: FontWeight.bold)),
+                                    const Spacer(),
+                                    IconButton(
+                                      icon: const Icon(Icons.refresh, size: 20),
+                                      onPressed: _loadApiData,
+                                    ),
+                                  ],
+                                ),
+                                Text(_motivationalQuote, style: const TextStyle(fontStyle: FontStyle.italic)),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.health_and_safety, color: Colors.green, size: 16),
+                                    const SizedBox(width: 4),
+                                    Expanded(child: Text(_healthTip, style: const TextStyle(fontSize: 12))),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.wb_sunny, color: Colors.amber, size: 16),
+                                    const SizedBox(width: 4),
+                                    Expanded(child: Text(_weatherMotivation, style: const TextStyle(fontSize: 12))),
+                                  ],
                                 ),
                               ],
                             ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _load,
-                            child: ListView.separated(
-                              itemCount: _goals.length,
-                              separatorBuilder: (_, __) => const SizedBox(height: 12),
-                              itemBuilder: (_, i) => _goalCard(_goals[i]),
-                            ),
                           ),
+                          // Goals List
+                          Expanded(
+                            child: _goals.isEmpty
+                                ? Center(
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        const Text('No goals yet', style: TextStyle(color: Colors.black87)),
+                                        const SizedBox(height: 12),
+                                        ElevatedButton.icon(
+                                          onPressed: () async {
+                                            final newGoal = await Navigator.push<Goal?>(
+                                              context,
+                                              MaterialPageRoute(builder: (_) => const AddGoalPage()),
+                                            );
+                                            if (newGoal != null) _addGoal(newGoal);
+                                          },
+                                          icon: const Icon(Icons.add),
+                                          label: const Text('Create a goal'),
+                                        ),
+                                      ],
+                                    ),
+                                  )
+                                : RefreshIndicator(
+                                    onRefresh: () async {
+                                      await _load();
+                                      await _loadApiData();
+                                    },
+                                    child: ListView.separated(
+                                      itemCount: _goals.length,
+                                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                                      itemBuilder: (_, i) => _goalCard(_goals[i]),
+                                    ),
+                                  ),
+                          ),
+                        ],
+                      ),
               )
             ],
           ),
